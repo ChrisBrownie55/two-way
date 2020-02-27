@@ -2,11 +2,22 @@
   "name": "2way",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.m.js",
+  "unpkg": "dist/index.umd.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "rm -rf dist/ && microbundle --raw --tsconfig tsconfig.json"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@testing-library/dom": "^6.12.2",
+    "jest": "^25.1.0",
+    "microbundle": "^0.11.0",
+    "typescript": "^3.8.2"
+  },
+  "dependencies": {
+    "valoo": "^2.1.0"
+  }
 }
