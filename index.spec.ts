@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom/extend-expect';
 import { bind, subscribe } from './index.ts';
 
-describe.skip('bind class property to a dom element's attributes/properties', () => {
+describe.skip(`bind class property to a dom element's attributes/properties`, () => {
   test('updates dom attributes', () => {
   });
   test('updates dom properties', () => {
