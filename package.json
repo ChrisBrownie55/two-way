@@ -1,27 +1,30 @@
 {
-  "name": "2way",
+  "name": "two-way",
   "version": "1.0.0",
   "description": "",
+  "keywords": [
+    "binding",
+    "two way binding",
+    "decorator",
+    "web components"
+  ],
   "main": "dist/index.js",
   "module": "dist/index.m.js",
   "unpkg": "dist/index.umd.js",
   "scripts": {
-    "build": "rm -rf dist/ && microbundle --raw --tsconfig tsconfig.json",
     "test": "tap",
-    "test:watch": "tap -w"
+    "test:watch": "tap -w",
+    "build": "rm -rf dist/ && microbundle --raw --tsconfig tsconfig.json"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "dependencies": {
+    "valoo": "^2.1.0"
+  },
   "devDependencies": {
-    "@testing-library/dom": "^6.12.2",
+    "@testing-library/dom": "^6.15.0",
     "@testing-library/user-event": "^10.0.0",
     "jsdom": "^16.2.0",
     "microbundle": "^0.11.0",
     "tap": "^14.10.6",
-    "typescript": "^3.8.2"
-  },
-  "dependencies": {
-    "valoo": "^2.1.0"
+    "typescript": "^3.8.3"
   }
 }
