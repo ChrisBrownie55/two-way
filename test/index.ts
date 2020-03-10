@@ -1,7 +1,5 @@
 import tap from 'tap';
 import '../mock/window.ts';
-
-import 
 import { bind } from '../index';
 
 class TestElement extends HTMLElement {
@@ -86,10 +84,11 @@ class TestUnidirectional extends TestElement {
 }
 customElements.define('test-unidirectional', TestUnidirectional);
 
-tap.test(`bind class property to a dom element's attributes/properties`, () => {
-  // updates dom attribute
+tap.test(`bind class property to a dom element's attributes/properties`, t => {
+  // updates dom attributes
   // updates dom properties
   // only updates dom attributes/properties that are bound with `data-model`
+  t.end();
 });
 
   // updates class properties when dom event fires
