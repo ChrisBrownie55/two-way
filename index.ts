@@ -1,5 +1,7 @@
 import valoo from 'valoo';
 
-export function bind(target: any) {
+export function Bind(target: any) {
   return target;
 }
+
+export function bind(...props: any) {}
