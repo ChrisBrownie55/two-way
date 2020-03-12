@@ -4,6 +4,7 @@ import '../mock/window.ts';
 // Tools
 import tap from 'tap';
 import { screen, getByTestId, prettyDOM } from '@testing-library/dom';
+import userEvent from '@testing-library/user-event';
 
 // Setup
 import '../mock/window.ts';
@@ -97,14 +98,19 @@ class TestUnidirectional extends HTMLElement {
 }
 customElements.define('test-unidirectional', TestUnidirectional);
 
-tap.test(`bind class property to a dom element's attributes/properties`, t => {
+tap.test(`bind class property to a dom element's attributes/properties`, async t => {
   // updates dom properties
   document.body.innerHTML = `
     <test-bidirectional data-testid="custom-element"></test-bidirectional>
   `;
 
   const root = <HTMLElement>screen.getByTestId('custom-element').shadowRoot.children[0];
-  const textInput = getByTestId(root, 'text-input');
+  const textInput = <HTMLInputElement>getByTestId(root, 'text-input');
+
+  t.equal(textInput.value, '');
+  await userEvent.type(textInput, 'Hello World!');
+  t.equal(textInput.value, 'Hello World!');
+
   const individualCheckbox = getByTestId(root, 'individual-checkbox');
   const checkboxes = {
     array: [getByTestId(root, 'checkbox-A1'), getByTestId(root, 'checkbox-A2')],
