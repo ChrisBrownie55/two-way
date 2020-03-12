@@ -104,12 +104,13 @@ tap.test(`bind class property to a dom element's attributes/properties`, async t
     <test-bidirectional data-testid="custom-element"></test-bidirectional>
   `;
 
-  const root = <HTMLElement>screen.getByTestId('custom-element').shadowRoot.children[0];
+  const customElement = <TestBidirectional>screen.getByTestId('custom-element');
+  const root = <HTMLElement>customElement.shadowRoot.children[0];
   const textInput = <HTMLInputElement>getByTestId(root, 'text-input');
 
-  t.equal(textInput.value, '');
+  t.equal(customElement.value, 'initial value');
   await userEvent.type(textInput, 'Hello World!');
-  t.equal(textInput.value, 'Hello World!');
+  t.equal(customElement.value, 'Hello World!');
 
   const individualCheckbox = getByTestId(root, 'individual-checkbox');
   const checkboxes = {
