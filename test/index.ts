@@ -98,34 +98,64 @@ class TestUnidirectional extends HTMLElement {
 }
 customElements.define('test-unidirectional', TestUnidirectional);
 
-tap.test(`bind class property to a dom element's attributes/properties`, async t => {
-  // updates dom properties
+tap.test('bi-directional', t => {
   document.body.innerHTML = `
     <test-bidirectional data-testid="custom-element"></test-bidirectional>
   `;
 
-  const customElement = <TestBidirectional>screen.getByTestId('custom-element');
-  const root = <HTMLElement>customElement.shadowRoot.children[0];
-  const textInput = <HTMLInputElement>getByTestId(root, 'text-input');
+  const testBidirectional = <TestBidirectional>screen.getByTestId('custom-element');
+  const root = <HTMLElement>testBidirectional.shadowRoot.children[0];
 
-  t.equal(customElement.value, 'initial value');
-  await userEvent.type(textInput, 'Hello World!');
-  t.equal(customElement.value, 'Hello World!');
+  t.test(`bind class property to input's value`, async t => {
+    // updates dom properties
+    const textInput = <HTMLInputElement>getByTestId(root, 'text-input');
 
-  const individualCheckbox = getByTestId(root, 'individual-checkbox');
-  const checkboxes = {
-    array: [getByTestId(root, 'checkbox-A1'), getByTestId(root, 'checkbox-A2')],
-    set: [getByTestId(root, 'checkbox-S1'), getByTestId(root, 'checkbox-S2')]
-  };
-  const radios = [getByTestId(root, 'radio-1'), getByTestId(root, 'radio-2')];
-  const select = getByTestId(root, 'select');
-  const multipleSelect = getByTestId(root, 'multi-select');
+    t.equal(testBidirectional.value, 'initial value');
+    t.equal(textInput.value, 'initial value', 'Text input should match initial value on bound property');
 
-  // only updates dom attributes/properties that are bound with `data-model`
+    await userEvent.type(textInput, 'Hello World!');
+    t.equal(testBidirectional.value, 'Hello World!', 'Typing in input updates bound property');
+
+    testBidirectional.value = 'Another change';
+    t.equal(textInput.value, 'Another change', 'Changing value on property reflects to input');
+
+    t.end();
+  });
+
+  t.test(`bind class property to checkbox`, async t => {
+    const individualCheckbox = <HTMLInputElement>getByTestId(root, 'individual-checkbox');
+    
+    t.end();
+  });
+
+  t.test(`bind class property to multiple checkboxes`, async t => {
+    const checkboxes = {
+      array: [getByTestId(root, 'checkbox-A1'), getByTestId(root, 'checkbox-A2')],
+      set: [getByTestId(root, 'checkbox-S1'), getByTestId(root, 'checkbox-S2')]
+    };
+
+    t.end();
+  });
+
+  t.test(`bind class property to radio inputs`, async t => {
+    const radios = [getByTestId(root, 'radio-1'), getByTestId(root, 'radio-2')];
+
+    t.end();
+  });
+
+  t.test(`bind class property to selected options in <select>`, async t => {
+    const select = getByTestId(root, 'select');
+
+    t.end();
+  });
+
+  t.test(`bind class property to multiple selected options in <select multiple>`, async t => { 
+    const multipleSelect = getByTestId(root, 'multi-select');
+
+    t.end();
+  });
+
   t.end();
 });
 
-  // updates class properties when dom event fires
-    // value
-    // checked
-    // custom
+/* TODO: one way data binding tests */
