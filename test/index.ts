@@ -148,21 +148,21 @@ tap.test('bi-directional', t => {
   t.test(`bind class property to multiple checkboxes`, async t => {
     await t.test('with array', async t => {
       t.includesOnly(component.checkedNames, ['Brown']);
-      t.equal(getByText('Brown').checked, true);
-      t.equal(getByText('Boring').checked, false);
+      t.equal(getByText('Brown').checked, true, 'Brown should start checked');
+      t.equal(getByText('Boring').checked, false, 'Boring should start unchecked');
       
       await userEvent.click(getByText('Boring'));
-      t.includesOnly(component.checkedNames, ['Brown', 'Boring']);
+      t.includesOnly(component.checkedNames, ['Brown', 'Boring'], 'should add Boring when checked');
           
       await userEvent.click(getByText('Brown'));
-      t.includesOnly(component.checkedNames, ['Boring']);
+      t.includesOnly(component.checkedNames, ['Boring'], 'should remove Brown when unchecked');
 
       component.checkedNames = [];
-      t.equal(component.checkedNames.length, 0);
+      t.equal(getByText('Boring').checked, false, 'should uncheck Boring when removed');
 
       component.checkedNames = ['Brown', 'Boring'];
-      t.equal(getByText('Brown').checked, true);
-      t.equal(getByText('Boring').checked, true);
+      t.equal(getByText('Brown').checked, true, 'should update Brown to true');
+      t.equal(getByText('Boring').checked, true, 'should update Boring to true');
 
       t.end();
     });
