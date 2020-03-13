@@ -3,7 +3,7 @@ import '../mock/window.ts';
 
 // Tools
 import tap from 'tap';
-import { screen, getByTestId, prettyDOM } from '@testing-library/dom';
+import { screen, getByTestId, getByText, getByDisplayValue, prettyDOM } from '@testing-library/dom';
 import userEvent from '@testing-library/user-event';
 
 // Setup
@@ -98,43 +98,96 @@ class TestUnidirectional extends HTMLElement {
 }
 customElements.define('test-unidirectional', TestUnidirectional);
 
+/* START OF TESTS */
+
+tap.Test.prototype.addAssert('includesOnly', 2, function (iterable, items, messages=items.map(item => `should include ${item}`), extra) {
+  const set = new Set(iterable);
+
+  items.forEach((item, index) => {
+    const hasItem = set.delete(item);
+    this.equal(hasItem, true, messages[index], extra);
+  });
+});
+
 tap.test('bi-directional', t => {
   document.body.innerHTML = `
     <test-bidirectional data-testid="custom-element"></test-bidirectional>
   `;
 
-  const testBidirectional = <TestBidirectional>screen.getByTestId('custom-element');
-  const root = <HTMLElement>testBidirectional.shadowRoot.children[0];
+  const component = <TestBidirectional>screen.getByTestId('custom-element');
+  const root = <HTMLElement>component.shadowRoot.children[0];
 
   t.test(`bind class property to input's value`, async t => {
-    // updates dom properties
     const textInput = <HTMLInputElement>getByTestId(root, 'text-input');
 
-    t.equal(testBidirectional.value, 'initial value');
-    t.equal(textInput.value, 'initial value', 'Text input should match initial value on bound property');
+    t.equal(component.value, textInput.value, 'Text input should match initial value on bound property');
 
     await userEvent.type(textInput, 'Hello World!');
-    t.equal(testBidirectional.value, 'Hello World!', 'Typing in input updates bound property');
+    t.equal(component.value, 'Hello World!', 'Typing in input updates bound property');
 
-    testBidirectional.value = 'Another change';
+    component.value = 'Another change';
     t.equal(textInput.value, 'Another change', 'Changing value on property reflects to input');
 
     t.end();
   });
 
   t.test(`bind class property to checkbox`, async t => {
-    const individualCheckbox = <HTMLInputElement>getByTestId(root, 'individual-checkbox');
+    const checkbox = <HTMLInputElement>getByTestId(root, 'individual-checkbox');
     
+    t.equal(component.isChecked, checkbox.checked, 'Checkbox should match initial value');
+    
+    await userEvent.click(checkbox);
+    t.equal(component.isChecked, true, 'Clicking checkbox updates bound property');
+
+    component.isChecked = false;
+    t.equal(checkbox.checked, false, 'Changing property updates DOM property');
+
     t.end();
   });
 
   t.test(`bind class property to multiple checkboxes`, async t => {
-    const checkboxes = {
-      array: [getByTestId(root, 'checkbox-A1'), getByTestId(root, 'checkbox-A2')],
-      set: [getByTestId(root, 'checkbox-S1'), getByTestId(root, 'checkbox-S2')]
-    };
+    await t.test('with array', async t => {
+      t.includesOnly(component.checkedNames, ['Brown']);
+      t.equal(getByText('Brown').checked, true);
+      t.equal(getByText('Boring').checked, false);
+      
+      await userEvent.click(getByText('Boring'));
+      t.includesOnly(component.checkedNames, ['Brown', 'Boring']);
+          
+      await userEvent.click(getByText('Brown'));
+      t.includesOnly(component.checkedNames, ['Boring']);
 
-    t.end();
+      component.checkedNames = [];
+      t.equal(component.checkedNames.length, 0);
+
+      component.checkedNames = ['Brown', 'Boring'];
+      t.equal(getByText('Brown').checked, true);
+      t.equal(getByText('Boring').checked, true);
+
+      t.end();
+    });
+
+    await t.test('with set', async t => {
+      t.includesOnly(component.uniqueNames, ['Joe']);
+      t.equal(getByText('Joe').checked, true, 'Joe should start checked');
+      t.equal(getByText('Chris').checked, false, 'Chris should start unchecked');
+
+      await userEvent.click(getByText('Chris'));
+      t.includesOnly(component.uniqueNames, ['Joe', 'Chris'], 'should add Chris on check');
+
+      await userEvent.click(getByText('Joe'));
+      t.includesOnly(component.uniqueNames, ['Chris'], 'should remove Joe on uncheck');
+
+      component.uniqueNames.clear();
+      t.equal(getByText('Joe').checked, false, 'should uncheck all bound checkboxes on .clear');
+      t.equal(getByText('Chris').checked, false, 'should uncheck all bound checkboxes on .clear');
+
+      component.uniqueNames.add('Joe');
+      t.equal(getByText('Joe').checked, true, 'should check Joe when using .add');
+      
+      component.uniqueNames.remove('Joe');
+      t.equal(getByText('Joe').checked, false, 'should uncheck Joe when using .remove');
+    });
   });
 
   t.test(`bind class property to radio inputs`, async t => {
