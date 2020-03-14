@@ -3,7 +3,7 @@ import '../mock/window.ts';
 
 // Tools
 import tap from 'tap';
-import { screen, getByTestId, getByText, getByDisplayValue, prettyDOM } from '@testing-library/dom';
+import { screen, getByTestId, getByDisplayValue, prettyDOM } from '@testing-library/dom';
 import userEvent from '@testing-library/user-event';
 
 // Setup
@@ -100,13 +100,16 @@ customElements.define('test-unidirectional', TestUnidirectional);
 
 /* START OF TESTS */
 
-tap.Test.prototype.addAssert('includesOnly', 2, function (iterable, items, messages=items.map(item => `should include ${item}`), extra) {
+tap.Test.prototype.addAssert('includesOnly', 2, function (iterable, items, messages=items.map(item => `should include ${item}`)) {
   const set = new Set(iterable);
+
+  const multipleMessages = Array.isArray(messages);
 
   items.forEach((item, index) => {
     const hasItem = set.delete(item);
-    this.equal(hasItem, true, messages[index], extra);
+    this.equal(hasItem, true, multipleMessages ? messages[index] : messages);
   });
+  this.equal(set.size, 0, multipleMessages ? `shouldn't include more than ${items} in ${iterable}` : messages);
 });
 
 tap.test('bi-directional', t => {
@@ -147,51 +150,61 @@ tap.test('bi-directional', t => {
 
   t.test(`bind class property to multiple checkboxes`, async t => {
     await t.test('with array', async t => {
-      t.includesOnly(component.checkedNames, ['Brown']);
-      t.equal(getByText('Brown').checked, true, 'Brown should start checked');
-      t.equal(getByText('Boring').checked, false, 'Boring should start unchecked');
+      const checkboxes = {
+        brown: <HTMLInputElement>getByDisplayValue(root, 'Brown'),
+        boring: <HTMLInputElement>getByDisplayValue(root, 'Boring')
+      };
+
+      t.equal(checkboxes.brown.checked, true, 'Brown should start checked');
+      t.equal(checkboxes.boring.checked, false, 'Boring should start unchecked');
       
-      await userEvent.click(getByText('Boring'));
+      await userEvent.click(checkboxes.boring);
       t.includesOnly(component.checkedNames, ['Brown', 'Boring'], 'should add Boring when checked');
           
-      await userEvent.click(getByText('Brown'));
+      await userEvent.click(checkboxes.brown);
       t.includesOnly(component.checkedNames, ['Boring'], 'should remove Brown when unchecked');
 
       component.checkedNames = [];
-      t.equal(getByText('Boring').checked, false, 'should uncheck Boring when removed');
+      t.equal(checkboxes.boring.checked, false, 'should uncheck Boring when removed');
 
       component.checkedNames = ['Brown', 'Boring'];
-      t.equal(getByText('Brown').checked, true, 'should update Brown to true');
-      t.equal(getByText('Boring').checked, true, 'should update Boring to true');
+      t.equal(checkboxes.brown.checked, true, 'should update Brown to true');
+      t.equal(checkboxes.boring.checked, true, 'should update Boring to true');
 
       t.end();
     });
 
     await t.test('with set', async t => {
-      t.includesOnly(component.uniqueNames, ['Joe']);
-      t.equal(getByText('Joe').checked, true, 'Joe should start checked');
-      t.equal(getByText('Chris').checked, false, 'Chris should start unchecked');
+      const checkboxes = {
+        joe: <HTMLInputElement>getByDisplayValue(root, 'Joe'),
+        chris: <HTMLInputElement>getByDisplayValue(root, 'Chris')
+      };
 
-      await userEvent.click(getByText('Chris'));
+      t.equal(checkboxes.joe.checked, true, 'Joe should start checked');
+      t.equal(checkboxes.chris.checked, false, 'Chris should start unchecked');
+
+      await userEvent.click(checkboxes.chris);
       t.includesOnly(component.uniqueNames, ['Joe', 'Chris'], 'should add Chris on check');
 
-      await userEvent.click(getByText('Joe'));
+      await userEvent.click(checkboxes.joe);
       t.includesOnly(component.uniqueNames, ['Chris'], 'should remove Joe on uncheck');
 
       component.uniqueNames.clear();
-      t.equal(getByText('Joe').checked, false, 'should uncheck all bound checkboxes on .clear');
-      t.equal(getByText('Chris').checked, false, 'should uncheck all bound checkboxes on .clear');
+      t.equal(checkboxes.joe.checked, false, 'should uncheck all bound checkboxes on .clear');
+      t.equal(checkboxes.chris.checked, false, 'should uncheck all bound checkboxes on .clear');
 
       component.uniqueNames.add('Joe');
-      t.equal(getByText('Joe').checked, true, 'should check Joe when using .add');
+      t.equal(checkboxes.joe.checked, true, 'should check Joe when using .add');
       
-      component.uniqueNames.remove('Joe');
-      t.equal(getByText('Joe').checked, false, 'should uncheck Joe when using .remove');
+      component.uniqueNames.delete('Joe');
+      t.equal(checkboxes.joe.checked, false, 'should uncheck Joe when using .delete');
+
+      t.end();
     });
   });
 
   t.test(`bind class property to radio inputs`, async t => {
-    const radios = [getByTestId(root, 'radio-1'), getByTestId(root, 'radio-2')];
+    
 
     t.end();
   });
