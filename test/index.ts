@@ -158,21 +158,21 @@ tap.test('bi-directional', t => {
         boring: <HTMLInputElement>getByDisplayValue(root, 'Boring')
       };
 
-      t.equal(checkboxes.brown.checked, true, 'Brown should start checked');
-      t.equal(checkboxes.boring.checked, false, 'Boring should start unchecked');
+      t.equal(checkboxes.brown.checked, true, 'Brown checkbox should start checked');
+      t.equal(checkboxes.boring.checked, false, 'Boring checkbox should start unchecked');
 
       await userEvent.click(checkboxes.boring);
-      t.includesOnly(component.checkedNames, ['Brown', 'Boring'], 'should add Boring when checked');
+      t.includesOnly(component.checkedNames, ['Brown', 'Boring'], 'should add Boring to bound Array when checked');
 
       await userEvent.click(checkboxes.brown);
-      t.includesOnly(component.checkedNames, ['Boring'], 'should remove Brown when unchecked');
+      t.includesOnly(component.checkedNames, ['Boring'], 'should remove Brown from bound Array when unchecked');
 
       component.checkedNames = [];
-      t.equal(checkboxes.boring.checked, false, 'should uncheck Boring when removed');
+      t.equal(checkboxes.boring.checked, false, 'should uncheck Boring when removed from bound Array');
 
       component.checkedNames = ['Brown', 'Boring'];
-      t.equal(checkboxes.brown.checked, true, 'should update Brown to true');
-      t.equal(checkboxes.boring.checked, true, 'should update Boring to true');
+      t.equal(checkboxes.brown.checked, true, 'should check Brown checkbox when bound Array contains Brown');
+      t.equal(checkboxes.boring.checked, true, 'should check Boring checkbox when bound Array contains Boring');
 
       t.end();
     });
@@ -187,20 +187,20 @@ tap.test('bi-directional', t => {
       t.equal(checkboxes.chris.checked, false, 'Chris should start unchecked');
 
       await userEvent.click(checkboxes.chris);
-      t.includesOnly(component.uniqueNames, ['Joe', 'Chris'], 'should add Chris on check');
+      t.includesOnly(component.uniqueNames, ['Joe', 'Chris'], 'should add Chris to bound Set when checked');
 
       await userEvent.click(checkboxes.joe);
-      t.includesOnly(component.uniqueNames, ['Chris'], 'should remove Joe on uncheck');
+      t.includesOnly(component.uniqueNames, ['Chris'], 'should remove Joe from bound Set when unchecked');
 
       component.uniqueNames.clear();
-      t.equal(checkboxes.joe.checked, false, 'should uncheck all bound checkboxes on .clear');
-      t.equal(checkboxes.chris.checked, false, 'should uncheck all bound checkboxes on .clear');
+      t.equal(checkboxes.joe.checked, false, 'should uncheck all bound checkboxes on Set#clear');
+      t.equal(checkboxes.chris.checked, false, 'should uncheck all bound checkboxes on Set#clear');
 
       component.uniqueNames.add('Joe');
-      t.equal(checkboxes.joe.checked, true, 'should check Joe when using .add');
+      t.equal(checkboxes.joe.checked, true, 'should check Joe when using Set#add');
 
       component.uniqueNames.delete('Joe');
-      t.equal(checkboxes.joe.checked, false, 'should uncheck Joe when using .delete');
+      t.equal(checkboxes.joe.checked, false, 'should uncheck Joe when using Set#delete');
 
       t.end();
     });
@@ -231,14 +231,14 @@ tap.test('bi-directional', t => {
       cats: <HTMLOptionElement>getByText(root, 'Cats')
     };
 
-    t.equal(select.value, '', 'value should be an empty string on initialization');
-    t.equal(options.default.selected, true, 'default option should be selected');
+    t.equal(select.value, '', '<select> value should be an empty string on initialization');
+    t.equal(options.default.selected, true, 'default <option> should be selected');
 
     await userEvent.selectOptions(select, 'Dogs');
     t.equal(component.selected, 'Dogs', 'selecting dogs should update bound property');
     
     component.selected = 'Cats';
-    t.equal(select.value, 'Cats', 'changing bound property should update select value');
+    t.equal(select.value, 'Cats', 'changing bound property should update <select> value');
 
     t.end();
   });
@@ -255,16 +255,18 @@ tap.test('bi-directional', t => {
     t.equal(options.js.selected, true, 'values in array start out selected');
 
     await userEvent.selectOptions(multipleSelect, 'TypeScript');
-    t.includesOnly(component.multiSelected, ['JavaScript', 'TypeScript'], 'should add TypeScript to bound property when selected');
+    t.includesOnly(component.multiSelected, ['JavaScript', 'TypeScript'], 'should add TypeScript to bound Array when selected');
 
     component.multiSelected = ['PureScript', 'SvelteScript'];
-    t.includesOnly(multipleSelect.selectedOptions, [options.ps, options.ss], 'updating bound property with multiple items should update DOM');
+    t.includesOnly(multipleSelect.selectedOptions, [options.ps, options.ss], 'updating bound Array with multiple items should select those items');
 
     component.multiSelected = [];
-    t.equal(multipleSelect.selectedOptions.length, 0, 'emptying the bound property should deselect all options');
+    t.equal(multipleSelect.selectedOptions.length, 0, 'emptying the bound Array should deselect all options');
 
     await userEvent.selectOptions(multipleSelect, ['JavaScript', 'PureScript', 'SvelteScript']);
-    t.includesOnly(component.multiSelected, ['JavaScript', 'PureScript', 'SvelteScript'], 'should have all selected options to in bound property');
+    t.includesOnly(component.multiSelected, ['JavaScript', 'PureScript', 'SvelteScript'], 'selecting multiple options should populate the bound Array');
+
+    /* TODO: Add <select multiple> with Set */
 
     t.end();
   });
