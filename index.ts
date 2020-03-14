@@ -59,8 +59,7 @@ function getBindableProperty(element: any) {
 function handleElement(target: any, element: any) {
   for (const attribute in element.datset) {
     if (attribute === 'model') {
-      
-      handleAttribute(target, BindingType.Model, element.dataset.model);
+      return handleAttribute(target, BindingType.Model, getBindableProperty(element), element.dataset.model);
     } else if (attribute.startsWith('bind:')) {
       
     } else if (attribute.startsWith('on:')) {
