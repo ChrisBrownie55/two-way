@@ -3,7 +3,7 @@ import '../mock/window.ts';
 
 // Tools
 import tap from 'tap';
-import { screen, getByTestId, getByDisplayValue, prettyDOM } from '@testing-library/dom';
+import { screen, getByTestId, getByText, getByDisplayValue, prettyDOM } from '@testing-library/dom';
 import userEvent from '@testing-library/user-event';
 
 // Setup
@@ -23,8 +23,8 @@ class TestBidirectional extends HTMLElement {
   
   radioPicked: string = 'One';
 
-  selected: string = 'A';
-  multiSelected: string[] = ['A'];
+  selected: string = '';
+  multiSelected: string[] = ['JavaScript'];
 
   #shadowRoot: ShadowRoot;
   get shadowRoot() { return this.#shadowRoot; } // required for decorator
@@ -56,13 +56,16 @@ class TestBidirectional extends HTMLElement {
         <input data-testid="radio-2" type="radio" value="Two" data-model="radioPicked">
 
         <select data-testid="select" data-model="selected">
-          <option>A</option>
-          <option>B</option>
+          <option disabled value="">Please select one</option>
+          <option>Dogs</option>
+          <option>Cats</option>
         </select>
 
         <select data-testid="multi-select" data-model="multiSelected" multiple>
-          <option>A</option>
-          <option>B</option>
+          <option>JavaScript</option>
+          <option>TypeScript</option>
+          <option>PureScript</option>
+          <option>SvelteScript</option>
         </select>
       </div>
     `;
@@ -129,7 +132,7 @@ tap.test('bi-directional', t => {
     t.equal(component.value, 'Hello World!', 'Typing in input updates bound property');
 
     component.value = 'Another change';
-    t.equal(textInput.value, 'Another change', 'Changing value on property reflects to input');
+    t.equal(textInput.value, 'Another change', 'Changing bound property reflects to input value');
 
     t.end();
   });
@@ -143,7 +146,7 @@ tap.test('bi-directional', t => {
     t.equal(component.isChecked, true, 'Clicking checkbox updates bound property');
 
     component.isChecked = false;
-    t.equal(checkbox.checked, false, 'Changing property updates DOM property');
+    t.equal(checkbox.checked, false, 'Changing bound property updates checkbox.checked');
 
     t.end();
   });
@@ -157,10 +160,10 @@ tap.test('bi-directional', t => {
 
       t.equal(checkboxes.brown.checked, true, 'Brown should start checked');
       t.equal(checkboxes.boring.checked, false, 'Boring should start unchecked');
-      
+
       await userEvent.click(checkboxes.boring);
       t.includesOnly(component.checkedNames, ['Brown', 'Boring'], 'should add Boring when checked');
-          
+
       await userEvent.click(checkboxes.brown);
       t.includesOnly(component.checkedNames, ['Boring'], 'should remove Brown when unchecked');
 
@@ -195,7 +198,7 @@ tap.test('bi-directional', t => {
 
       component.uniqueNames.add('Joe');
       t.equal(checkboxes.joe.checked, true, 'should check Joe when using .add');
-      
+
       component.uniqueNames.delete('Joe');
       t.equal(checkboxes.joe.checked, false, 'should uncheck Joe when using .delete');
 
@@ -204,19 +207,64 @@ tap.test('bi-directional', t => {
   });
 
   t.test(`bind class property to radio inputs`, async t => {
-    
+    const radios = {
+      one: <HTMLInputElement>getByDisplayValue(root, 'One'),
+      two: <HTMLInputElement>getByDisplayValue(root, 'Two')
+    };
+
+    t.equal(radios.one.checked, true, 'One should start selected');
+
+    await userEvent.click(radios.two);
+    t.equal(component.radioPicked, 'Two', 'Two should be selected after clicking on it');
+
+    component.radioPicked = 'One';
+    t.equal(radios.one.checked, true, 'should select One when changing radioPicked to One');
 
     t.end();
   });
 
   t.test(`bind class property to selected options in <select>`, async t => {
-    const select = getByTestId(root, 'select');
+    const select = <HTMLSelectElement>getByTestId(root, 'select');
+    const options = {
+      default: <HTMLOptionElement>getByText(root, 'Please select one'),
+      dogs: <HTMLOptionElement>getByText(root, 'Dogs'),
+      cats: <HTMLOptionElement>getByText(root, 'Cats')
+    };
+
+    t.equal(select.value, '', 'value should be an empty string on initialization');
+    t.equal(options.default.selected, true, 'default option should be selected');
+
+    await userEvent.selectOptions(select, 'Dogs');
+    t.equal(component.selected, 'Dogs', 'selecting dogs should update bound property');
+    
+    component.selected = 'Cats';
+    t.equal(select.value, 'Cats', 'changing bound property should update select value');
 
     t.end();
   });
 
   t.test(`bind class property to multiple selected options in <select multiple>`, async t => { 
-    const multipleSelect = getByTestId(root, 'multi-select');
+    const multipleSelect = <HTMLSelectElement>getByTestId(root, 'multi-select');
+    const options = {
+      js: <HTMLOptionElement>getByText(root, 'JavaScript'),
+      ts: <HTMLOptionElement>getByText(root, 'TypeScript'),
+      ps: <HTMLOptionElement>getByText(root, 'PureScript'),
+      ss: <HTMLOptionElement>getByText(root, 'SvelteScript')
+    };
+
+    t.equal(options.js.selected, true, 'values in array start out selected');
+
+    await userEvent.selectOptions(multipleSelect, 'TypeScript');
+    t.includesOnly(component.multiSelected, ['JavaScript', 'TypeScript'], 'should add TypeScript to bound property when selected');
+
+    component.multiSelected = ['PureScript', 'SvelteScript'];
+    t.includesOnly(multipleSelect.selectedOptions, [options.ps, options.ss], 'updating bound property with multiple items should update DOM');
+
+    component.multiSelected = [];
+    t.equal(multipleSelect.selectedOptions.length, 0, 'emptying the bound property should deselect all options');
+
+    await userEvent.selectOptions(multipleSelect, ['JavaScript', 'PureScript', 'SvelteScript']);
+    t.includesOnly(component.multiSelected, ['JavaScript', 'PureScript', 'SvelteScript'], 'should have all selected options to in bound property');
 
     t.end();
   });
