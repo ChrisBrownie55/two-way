@@ -9,22 +9,27 @@ enum BindingType {
 };
 
 function handleAttribute(
-  target: any,
+  customElement: any,
   type: BindingType,
   elementProperty: string,
-  targetProperty: string
+  boundProperty: string
 ) {
-  
+  switch (type) {
+    case BindingType.Model:
+      
+      break;
+    case BindingType.Bind:
+      break;
+    case BindingType.Event:
+      break;
+    default:
+      throw new Error(`${type} is an invalid BindingType`);
+  }
 }
 
 function getBindableProperty(element: any) {
   if (element instanceof HTMLInputElement) {
     switch (element.type) {
-      case 'button':
-      case 'reset':
-      case 'submit':
-      case 'image':
-        throw new TypeError
       case 'file':
         return 'files';
       case 'radio':
@@ -48,22 +53,50 @@ function getBindableProperty(element: any) {
       case 'url':
       case 'text':
       case 'hidden':
+      case '':
+        return 'value';
+      case 'button':
+      case 'reset':
+      case 'submit':
+      case 'image':
       default:
-        return value;
+        throw new Error(`<input type="${element.type}"> does not support data-model.`);
     }
   } else if (element instanceof HTMLTextAreaElement) {
     return 'value';
   }
 }
 
-function handleElement(target: any, element: any) {
-  for (const attribute in element.datset) {
+function handleElement(customElement: any, element: any) {
+  for (const attribute in element.dataset) {
     if (attribute === 'model') {
-      return handleAttribute(target, BindingType.Model, getBindableProperty(element), element.dataset.model);
+      return handleAttribute(customElement, BindingType.Model, getBindableProperty(element), element.dataset.model);
     } else if (attribute.startsWith('bind:')) {
-      
-    } else if (attribute.startsWith('on:')) {
+      const match = attribute.match(/^bind:(.+)$/);
+      if (!match) {
+        throw new Error(`The dataset attribute "${attribute}" is missing the attribute/property name to bind to.`);
+      }
 
+      const elementProperty = match[1];
+      return handleAttribute(
+        customElement,
+        BindingType.Bind,
+        elementProperty,
+        element.dataset[attribute]
+      );
+    } else if (attribute.startsWith('on:')) {
+      const match = attribute.match(/^bind:(.+)$/);
+      if (!match) {
+        throw new Error(`The dataset attribute "${attribute}" is missing the event to bind to.`);
+      }
+
+      const elementProperty = match[1];
+      return handleAttribute(
+        customElement,
+        BindingType.Event,
+        elementProperty,
+        element.dataset[attribute]
+      );
     }
   }
 }
@@ -71,18 +104,23 @@ function handleElement(target: any, element: any) {
 type bindOptions = {
   root: ShadowRoot
 };
-export function bind(target: any, { root }: bindOptions) {
-  customElements.set(target, {
+export function bind(customElement: any, { root }: bindOptions) {
+  customElements.set(customElement, {
     elements: new WeakMap(),
     root
   })
 
-  const observer = new Observer((mutations: MutationRecord[]) => {
+  const observer = new MutationObserver((mutations: MutationRecord[]) => {
     
   });
   observer.observe(root, { attributes: true, childList: true, subtree: true });
 }
 
-export function Bind(target: any) {
-  return target;
+export function Bind(target: any): any {
+  return class extends target {
+    constructor() {
+      super();
+      bind(this, { root: this.shadowRoot });
+    }
+  }
 }
