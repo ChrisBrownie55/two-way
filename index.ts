@@ -11,8 +11,12 @@ enum BindingType {
 function handleAttribute(
   customElement: any,
   type: BindingType,
-  elementProperty: string,
-  boundProperty: string
+  // data-model/data-bind - element's property like `value` or `checked`
+  // data-on - event to bind to like `click` or `mousemove`
+  left: string,
+  // data-model/data-bind - customElement's property to bind to
+  // data-on - customElement's method to bind to or a function
+  right: string
 ) {
   switch (type) {
     case BindingType.Model:
