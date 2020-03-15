@@ -8,24 +8,71 @@ enum BindingType {
   Event
 };
 
+type attributeData = {
+  type: BindingType.Model,
+  viewProp: string,
+  viewEvent: string,
+  modelProp: string,
+} | {
+  type: BindingType.Bind,
+  viewProp: string,
+  modelProp: string
+} | {
+  type: BindingType.Event,
+  viewEvent: string,
+  eventHandler: string
+};
+
+
 function handleAttribute(
   customElement: any,
-  type: BindingType,
-  // data-model/data-bind - element's property like `value` or `checked`
-  // data-on - event to bind to like `click` or `mousemove`
-  left: string,
-  // data-model/data-bind - customElement's property to bind to
-  // data-on - customElement's method to bind to or a function
-  right: string
+  element: any,
+  { type, viewProp, viewEvent, eventHandler, modelProp }: attributeData
 ) {
+  const data = customElements.get(customElement);
+  const bindings = data.elements.get(element) || {};
+
+  const id = `${type}:${viewProp || viewEvent}=${modelProp || eventHandler}`;
+  if (!bindings.hasOwnProperty(id)) {
+    bindings[id] = valoo();
+  }
+
   switch (type) {
-    case BindingType.Model:
-      
+    case BindingType.Model: {
+      const isProp = element.hasOwnProperty(viewProp);
+      const isAttribute = element.hasAttribute(viewProp);
+
+      let initialValue;
+      if (customElement.hasOwnProperty(modelProp)) {
+        initialValue = customElement[modelProp];
+      } else if (isProp) {
+        initialValue = element[viewProp];
+      } else if (isAttribute) {
+        initialValue = element.getAttribute(viewProp);
+      } else {
+        initialValue = '';
+      }
+
+      const updateView = isProp
+        ? v => (element[viewProp] = v)
+        : v => element.setAttribute(viewProp, v);
+
+      Object.defineProperty(customElement, modelProp, {
+        get: bindings[id],
+        set: bindings[id]
+      });
+      const off = bindings[id].on(updateView);
       break;
-    case BindingType.Bind:
+    }
+
+    case BindingType.Bind: {
       break;
-    case BindingType.Event:
+    }
+
+    case BindingType.Event: {
       break;
+    }
+
     default:
       throw new Error(`${type} is an invalid BindingType`);
   }
@@ -35,19 +82,19 @@ function getBindableProperty(element: any) {
   if (element instanceof HTMLInputElement) {
     switch (element.type) {
       case 'file':
-        return 'files';
+        return { property: 'files', event: 'change' };
       case 'radio':
       case 'checkbox':
-        return 'checked';
+        return { property: 'checked', event: 'change' };
       case 'week':
       case 'month':
       case 'date':
       case 'datetime':
       case 'datetime-local':
-        return 'valueAsDate';
+        return { property: 'valueAsDate', event: 'change' };
       case 'range':
       case 'number':
-        return 'valueAsNumber';
+        return { property: 'valueAsNumber', event: 'input' };
       case 'search':
       case 'email':
       case 'color':
@@ -58,7 +105,7 @@ function getBindableProperty(element: any) {
       case 'text':
       case 'hidden':
       case '':
-        return 'value';
+        return { property: 'value', event: 'input' };
       case 'button':
       case 'reset':
       case 'submit':
@@ -67,39 +114,60 @@ function getBindableProperty(element: any) {
         throw new Error(`<input type="${element.type}"> does not support data-model.`);
     }
   } else if (element instanceof HTMLTextAreaElement) {
-    return 'value';
+    return { property: 'value', event: 'input' };
+  } else if (customElements.get(element.tagName.toLowerCase())) {
+    return { property: 'value', event: 'change' };
+  } else {
+    throw new Error(`<${element.tagName.toLowerCase()}> does not support data-model.`);
   }
 }
 
 function handleElement(customElement: any, element: any) {
   for (const attribute in element.dataset) {
     if (attribute === 'model') {
-      return handleAttribute(customElement, BindingType.Model, getBindableProperty(element), element.dataset.model);
+      const { property: viewProp, event: viewEvent } = getBindableProperty(element);
+
+      return handleAttribute(
+        customElement,
+        element,
+        {
+          type: BindingType.Model,
+          viewProp,
+          viewEvent,
+          modelProp: element.dataset.model
+        }
+      );
     } else if (attribute.startsWith('bind:')) {
       const match = attribute.match(/^bind:(.+)$/);
       if (!match) {
-        throw new Error(`The dataset attribute "${attribute}" is missing the attribute/property name to bind to.`);
+        throw new Error(`The dataset attribute "${attribute}" is missing the view attribute/property name to bind to.`);
       }
 
-      const elementProperty = match[1];
+      const viewProp = match[1];
       return handleAttribute(
         customElement,
-        BindingType.Bind,
-        elementProperty,
-        element.dataset[attribute]
+        element,
+        {
+          type: BindingType.Bind,
+          viewProp,
+          modelProp: element.dataset[attribute]
+        }
       );
     } else if (attribute.startsWith('on:')) {
       const match = attribute.match(/^bind:(.+)$/);
       if (!match) {
-        throw new Error(`The dataset attribute "${attribute}" is missing the event to bind to.`);
+        throw new Error(`The dataset attribute "${attribute}" is missing the view event to bind to.`);
       }
 
-      const elementProperty = match[1];
+      const viewEvent = match[1];
       return handleAttribute(
         customElement,
-        BindingType.Event,
-        elementProperty,
-        element.dataset[attribute]
+        element,
+        {
+          type: BindingType.Event,
+          viewEvent,
+          eventHandler: element.dataset[attribute]
+        }
       );
     }
   }
