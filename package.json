@@ -20,6 +20,7 @@
     "valoo": "^2.1.0"
   },
   "devDependencies": {
+    "mutation-observer": "^1.0.3",
     "@testing-library/dom": "^6.15.0",
     "@testing-library/user-event": "^10.0.0",
     "jsdom": "^16.2.0",

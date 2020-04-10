@@ -12,3 +12,6 @@ globalThis.window = window;
 
 // some can't be copied with Object.assign, so we'll do that manually
 globalThis.HTMLElement = window.HTMLElement;
+globalThis.HTMLInputElement = window.HTMLInputElement;
+globalThis.HTMLTextAreaElement = window.HTMLTextAreaElement;
+globalThis.HTMLSelectElement = window.HTMLSelectElement;

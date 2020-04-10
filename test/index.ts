@@ -1,5 +1,6 @@
 // Setup
 import '../mock/window.ts';
+import '../mock/mutation-observer.ts';
 
 // Tools
 import tap from 'tap';
@@ -12,7 +13,6 @@ import '../mock/window.ts';
 // Code being tested
 import { Bind, bind } from '../index';
 
-@Bind
 class TestBidirectional extends HTMLElement {
   value: string = 'initial value';
 
@@ -30,7 +30,8 @@ class TestBidirectional extends HTMLElement {
   get shadowRoot() { return this.#shadowRoot; } // required for decorator
   constructor() {
     super();
-    this.#shadowRoot = this.attachShadow({ mode: 'open' });   
+    this.#shadowRoot = this.attachShadow({ mode: 'open' });
+    bind(this, { root: this.#shadowRoot });
     this.render();
   }
  
@@ -123,10 +124,10 @@ tap.test('bi-directional', t => {
   const component = <TestBidirectional>screen.getByTestId('custom-element');
   const root = <HTMLElement>component.shadowRoot.children[0];
 
-  t.test(`bind class property to input's value`, async t => {
+  t.only(`bind class property to input's value`, async t => {
     const textInput = <HTMLInputElement>getByTestId(root, 'text-input');
 
-    t.equal(component.value, textInput.value, 'Text input should match initial value on bound property');
+    t.equal(textInput.value, component.value, 'Text input should match initial value on bound property');
 
     await userEvent.type(textInput, 'Hello World!');
     t.equal(component.value, 'Hello World!', 'Typing in input updates bound property');
